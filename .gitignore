@@ -6,4 +6,4 @@
 **/settingsforintegrationtests.yml
 **/settingsforunittests.yml
 **/settingsforkeygeneration.yml
-**/integration_tests_parameters.pem
+**/test_encryption_parameters.pem
