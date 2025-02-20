@@ -1,0 +1,8 @@
+**/__pycache__/
+**/venv/
+**/settings.yml
+**/settingsforserver.yml
+**/settingsforclient.yml
+**/settingsforintegrationtests.yml
+**/settingsforunittests.yml
+**/settingsforkeygeneration.yml
