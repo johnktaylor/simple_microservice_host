@@ -1,0 +1,36 @@
+database:
+  connection_string: mysql+mysqlconnector://<username>:<password>@<host>/<database_name>
+
+rabbitmq:
+  host: <rabbitmq_host>
+  user: <rabbitmq_user>
+  password: <rabbitmq_password>
+  queue_name: <rabbitmq_queue_name>
+  response_queue_name: <rabbitmq_response_queue_name>
+
+cryptography:
+  private_key_paths:
+    user_repository: <path/to/user_repository/private_key.pem>
+    integration_tests: <path/to/integration_tests/private_key.pem>
+    unit_tests: <path/to/unit_tests/private_key.pem>
+  public_key_paths:
+    user_repository: <path/to/user_repository/public_key.pem>
+    integration_tests: <path/to/integration_tests/public_key.pem>
+    unit_tests: <path/to/unit_tests/public_key.pem>
+  public_keys_dir: <path/to/public_keys_directory>
+  # List of encryption suites supported by the message encryption object.
+  # The order of the list is the order of preference.
+  # The first suite in the list is the preferred suite.
+  # The last suite in the list is the least preferred suite.
+  enforce_encryption: false
+  disable_signature_verification: true
+  encryption-suites:
+    - dh-aes-256-gcm
+    - dh-aes-256-cbc
+    - dh-aes-192-gcm
+    - dh-aes-192-cbc
+    - dh-aes-128-gcm
+    - dh-aes-128-cbc
+
+
+
