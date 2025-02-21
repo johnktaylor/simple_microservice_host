@@ -40,25 +40,8 @@ class MessageProcessing:
         """
         logging.info(f"Signing message")
         return self.messageverification.sign_message(message)
-    
-    def convert_datetime(self, datetime_str_iso8601: str) -> str:
-        """
-        Convert ISO 8601 datetime string to MySQL-compatible format.
 
-        Args:
-            datetime_str_iso8601 (str): The datetime string in ISO 8601 format.
-
-        Returns:
-            str: The datetime string in 'YYYY-MM-DD HH:MM:SS' format.
-        """
-        try:
-            dt = datetime.fromisoformat(datetime_str_iso8601.replace("Z", "+00:00"))
-            return dt.strftime('%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            logging.error(f"Invalid datetime format: {datetime_str_iso8601}")
-            raise
-
-    def parse_timestamp(self, timestamp_str: str) -> datetime:
+    def parse_timestamp_iso8601_to_datetime(self, timestamp_str: str) -> datetime:
         """
         Parse an ISO 8601 timestamp string into a timezone-aware datetime object.
 
@@ -69,7 +52,7 @@ class MessageProcessing:
             datetime: A timezone-aware datetime object.
         """
         logging.info(f"Parsing timestamp")
-        return self.messagedatefunctions.parse_timestamp(timestamp_str)
+        return self.messagedatefunctions.parse_timestamp_iso8601_to_datetime(timestamp_str)
         
     def encrypt_bytes_data(self, bytesinput: bytes, algorithm: str, client_id: str, encryption_key_override: str = None) -> bytes:
         """
@@ -157,7 +140,7 @@ class ServerMessageProcessing(MessageProcessing):
         """
         logging.info(f"Getting encryption suites")
         cryptography_settings = settings.get('cryptography')
-        encryption_suites = cryptography_settings.get('encryption-suites')
+        encryption_suites = cryptography_settings.get('encryption_suites')
         logging.info(f"Encryption suites: {encryption_suites}")
         return encryption_suites
 

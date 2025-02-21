@@ -13,7 +13,9 @@ class MessageEncryption:
     def __init__(self, settings: Dict[str, Any]):
         self.settings = settings
         self.cryptography_settings = settings.get('cryptography')
-        self.encryption_suites = self.cryptography_settings.get("encryption-suites")
+        self.encryption_suites = self.cryptography_settings.get("encryption_suites")
+
+        logging.info(f"Encryption Suites: {self.encryption_suites}")
 
         # Initialize the encryption keys, which will be used to store the derived keys for each algorithm and client ID
         self.encryption_keys = {}

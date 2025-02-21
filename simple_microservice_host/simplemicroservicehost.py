@@ -1,11 +1,17 @@
-import json
+import pika
+import os
+import sys
 from typing import Dict, Any
 from datetime import datetime
 import logging
 import base64
 from .messageprocessing import ServerMessageProcessing
-from .messageserialization import MessageSerialization
+from .messageserialization import MessageSerializationJson, MessageSerialization
 from .messageresponse import MessageResponse
+from .messageencryption import MessageEncryption
+from .messageverification import MessageVerification
+from .messagedatefunctions import MessageDateFunctions
+
 
 class ExtendedFunctions:
     def __init__(self, settings: Dict[str, Any]):
@@ -13,6 +19,24 @@ class ExtendedFunctions:
 
     def handle_message(self, message: Dict[str, Any]) -> str:
         pass
+
+class ExampleExtendedFunctions(ExtendedFunctions):
+    def __init__(self, settings: Dict[str, Any], servermessageprocessing: ServerMessageProcessing):
+        super().__init__(settings)
+        self.servermessageprocessing = servermessageprocessing
+
+    def handle_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        messageresponse = MessageResponse(None, None)
+        operation = message.get('operation')
+        data = message.get('data', {})
+
+        if operation == 'hello':
+            return self.hello_operation(data, message)
+        else:
+            return self.servermessageprocessing.generate_response(message, "unknown", "error", "Operation not found", error_code="OPERATION_NOT_FOUND")
+
+    def hello_operation(self, data: Dict[str, Any], message: Dict[str, Any]) -> Dict[str, Any]:
+        return self.servermessageprocessing.generate_response(message, "hello", "success", "Example operation completed successfully", data={"message": "Hey there!"})
 
 class SimpleMicroserviceHost:
     def __init__(
@@ -45,7 +69,7 @@ class SimpleMicroserviceHost:
             raise e
         
         try:
-            self.servermessageprocessing.parse_timestamp(message.get("timestamp"))
+            self.servermessageprocessing.parse_timestamp_iso8601_to_datetime(message.get("timestamp"))
         except ValueError:
             return self.servermessageprocessing.generate_response(
                 message, 
@@ -104,7 +128,7 @@ class SimpleMicroserviceHost:
                 return self.servermessageprocessing.generate_response(message, "unknown", "error", "Encrypt flag is false and enforce encryption is true", error_code="ENCRYPT_FLAG_FALSE_AND_ENFORCE_ENCRYPTION_TRUE")
 
         try:
-            self.servermessageprocessing.parse_timestamp(message.get("timestamp"))
+            self.servermessageprocessing.parse_timestamp_iso8601_to_datetime(message.get("timestamp"))
     
             logging.info(f"Timestamp parsed")
         except ValueError:
@@ -150,3 +174,114 @@ class SimpleMicroserviceHost:
             response['data'] = base64.b64encode(encrypted_response_data).decode('utf-8')
 
         return response
+    
+def on_request(ch, method, properties, body):
+    rabbitmq_response_queue_name = rabbitmq_settings.get('response_queue_name')
+
+    # Process the message
+    logging.debug(f"Received message: {body}")
+
+    # Handle the message
+    response = simplemicroservicehost.handle_message(body)
+
+    responsedata = MessageSerializationJson.serialize(response)
+
+    # Send response
+    ch.basic_publish(
+        exchange='',
+        routing_key=rabbitmq_response_queue_name,
+        properties=pika.BasicProperties(correlation_id=properties.correlation_id),
+        body=responsedata
+    )
+
+    # Acknowledge the message
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+def setupExampleServer():
+    global settings
+    global rabbitmq_settings
+    global simplemicroservicehost
+    
+    current_path = os.path.dirname(os.path.abspath(__file__))
+
+    settings = {
+        "rabbitmq": {
+            "host": "localhost",
+            "port": 5672,
+            "virtual_host": "/",
+            "user": "guest",
+            "password": "guest",
+            "queue_name": "example_queue",
+            "response_queue_name": "example_queue_response",
+        },
+        "cryptography": {
+            "disable_signature_verification": False,
+            "enforce_encryption": False,
+            "encryption_suites": ["dh-aes-256-gcm", "dh-aes-256-cbc", "dh-aes-192-gcm", "dh-aes-192-cbc", "dh-aes-128-gcm", "dh-aes-128-cbc"],
+            "private_key_paths": {
+                "microservicehost": current_path + "/examplecerts/microservicehost/donotuseinproductionprivatekey.pem",
+            },
+            "public_key_paths": {
+                "microservicehost": current_path + "/examplecerts/microservicehost/donotuseinproductionpublickey.pem",
+            },
+            "public_keys_dir": current_path + "/examplecerts/public_keys",
+        },
+    }
+
+    messageserialization = MessageSerializationJson()
+
+    messageencryption = MessageEncryption(settings)
+    messageverification = MessageVerification(settings, messageserialization)
+    messagedatefunction = MessageDateFunctions()
+    messageresponse = MessageResponse(messageverification, messageserialization)
+
+    servermessageprocessing = ServerMessageProcessing(
+        messageencryption, 
+        messageverification, 
+        messagedatefunction, 
+        messageresponse
+    )
+
+    extendedfunctions = ExampleExtendedFunctions(settings, servermessageprocessing)
+
+    simplemicroservicehost = SimpleMicroserviceHost(
+        settings, 
+        servermessageprocessing, 
+        messageserialization, 
+        extendedfunctions
+    )
+
+    # RabbitMQ connection parameters
+    rabbitmq_settings = settings.get('rabbitmq')
+    if not rabbitmq_settings:
+        print("Error: 'rabbitmq' section is missing in settings.yml")
+        sys.exit(1)
+    
+    rabbitmq_host = rabbitmq_settings.get('host')
+    rabbitmq_user = rabbitmq_settings.get('user')
+    rabbitmq_password = rabbitmq_settings.get('password')
+    rabbitmq_queue_name = rabbitmq_settings.get('queue_name')
+    rabbitmq_response_queue_name = rabbitmq_settings.get('response_queue_name')
+    rabbitmq_port = rabbitmq_settings.get('port', 5672)
+    rabbitmq_virtual_host = rabbitmq_settings.get('virtual_host', '/')
+    
+    if not rabbitmq_host or not rabbitmq_user or not rabbitmq_password:
+        print("Error: One or more RabbitMQ configuration parameters are missing in settings.yml")
+        sys.exit(1)
+    
+    # Establish connection to RabbitMQ
+    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_password)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host=rabbitmq_host, port=rabbitmq_port, virtual_host=rabbitmq_virtual_host, credentials=credentials))
+    channel = connection.channel()
+    
+    # Declare queues
+    channel.queue_declare(queue=rabbitmq_queue_name)
+    channel.queue_declare(queue=rabbitmq_response_queue_name)
+    
+    # Set up consumer
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue=rabbitmq_queue_name, on_message_callback=on_request)
+    
+    print("Waiting for messages. To exit press CTRL+C")
+    channel.start_consuming()

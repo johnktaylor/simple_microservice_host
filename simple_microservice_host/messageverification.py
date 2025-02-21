@@ -7,13 +7,13 @@ from .messageserialization import MessageSerialization
 from cryptography.exceptions import InvalidSignature
 
 class MessageVerification():
-    def __init__(self, messageserialization: MessageSerialization, settings: Dict[str, Any]):
+    def __init__(self, settings: Dict[str, Any], messageserialization: MessageSerialization, component_name: str = "microservicehost"):
         cryptography = settings.get('cryptography')
         if not cryptography:
             raise ValueError("Error: 'cryptography' section is missing in settings.yml")
         
-        private_key_path = cryptography['private_key_paths'].get('user_repository')
-        public_key_path = cryptography['public_key_paths'].get('user_repository')
+        private_key_path = cryptography['private_key_paths'].get(component_name)
+        public_key_path = cryptography['public_key_paths'].get(component_name)
         self.public_keys_dir = cryptography.get('public_keys_dir')
         
         if not private_key_path or not public_key_path:
