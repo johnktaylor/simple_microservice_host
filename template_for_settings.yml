@@ -10,11 +10,11 @@ rabbitmq:
 
 cryptography:
   private_key_paths:
-    user_repository: <path/to/user_repository/private_key.pem>
+    microservicehost: <path/to/user_repository/private_key.pem>
     integration_tests: <path/to/integration_tests/private_key.pem>
     unit_tests: <path/to/unit_tests/private_key.pem>
   public_key_paths:
-    user_repository: <path/to/user_repository/public_key.pem>
+    microservicehost: <path/to/user_repository/public_key.pem>
     integration_tests: <path/to/integration_tests/public_key.pem>
     unit_tests: <path/to/unit_tests/public_key.pem>
   public_keys_dir: <path/to/public_keys_directory>
