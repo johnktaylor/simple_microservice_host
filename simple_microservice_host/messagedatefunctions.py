@@ -39,6 +39,25 @@ class MessageDateFunctions():
             logging.error(f"Invalid datetime format: {datetime_str_iso8601}")
             raise
 
+    def convert_datetime_to_iso8601_string(self, dt: datetime) -> str:
+        """
+        Convert a Python datetime object to an ISO 8601 formatted string.
+
+        Args:
+            dt (datetime): The datetime object to convert.
+
+        Returns:
+            str: The datetime string in ISO 8601 format.
+        """
+        try:
+            # Set timezone to UTC
+            dt = dt.replace(tzinfo=pytz.UTC)
+            # Return the ISO 8601 formatted string
+            return dt.isoformat()
+        except ValueError:
+            logging.error(f"Invalid datetime format: {dt}")
+            raise
+
     def convert_datetime_string_to_iso8601_string(self, datetime_str: str) -> str:
         """
         Convert a MySQL-compatible datetime string to ISO 8601 format.

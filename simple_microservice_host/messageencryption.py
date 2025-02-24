@@ -119,8 +119,17 @@ class MessageEncryption:
         if encryption_key_override:
             key = encryption_key_override
         else:
-            key = self.encryption_keys.get(f"{algorithm}_{client_id}").get("derived_key")
-        
+            try:
+                key = self.encryption_keys.get(f"{algorithm}_{client_id}").get("derived_key")
+            except Exception as e:
+                logging.error(f"Error getting encryption key: {e}")
+                key = None
+
+        if key:
+            logging.info(f"Encryption key found for algorithm {algorithm} and client ID {client_id}")
+        else:
+            logging.error(f"No encryption key found for algorithm {algorithm} and client ID {client_id}")
+
         if not client_id:
             raise ValueError("Client ID is required")
         if not key:
@@ -142,8 +151,17 @@ class MessageEncryption:
         if encryption_key_override:
             key = encryption_key_override
         else:
-            key = self.encryption_keys.get(f"{algorithm}_{client_id}").get("derived_key")
+            try:
+                key = self.encryption_keys.get(f"{algorithm}_{client_id}").get("derived_key")
+            except Exception as e:
+                logging.error(f"Error getting encryption key: {e}")
+                key = None
 
+        if key:
+            logging.info(f"Encryption key found for algorithm {algorithm} and client ID {client_id}")
+        else:
+            logging.error(f"No encryption key found for algorithm {algorithm} and client ID {client_id}")
+            
         if not client_id:
             raise ValueError("Client ID is required")
         if not key:
