@@ -9,13 +9,26 @@ Please note this is currently under active development.
 - Supports multiple encryption suites (AES CBC/GCM) and facilitates key exchange.
 - Extensible via custom message processing functions.
 
+## Dependencies
+
+### System Requirements
+- **Python 3.8+**: Runtime environment for the microservice host.
+- **RabbitMQ**: Message broker service for receiving request messages and transmitting response messages.
+
+### Python Libraries
+The Python dependencies are listed in `requirements.txt`:
+- **`pika`**: Python AMQP client library used for connecting to RabbitMQ queues and consuming/publishing messages.
+- **`cryptography`**: Core cryptographic library providing symmetric encryption/decryption (AES-CBC and AES-GCM), key derivation (HKDF), signature verification (RSA/ECDSA), and X.509 certificate loading.
+- **`PyYAML`**: Used for parsing YAML settings and configuration files (`settings.yml`).
+- **`pytz`**: Timezone management for accurate message timestamp creation and validation.
+
 ## Installation
 1. Clone the repository.
-2. Install dependencies:
+2. Install Python dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-3. Configure your cryptography settings in the `settings.yml` file.
+3. Configure your RabbitMQ and cryptography settings in `settings.yml` (see `template_for_settings.yml` as a baseline).
 
 ## Usage
 Start the host by running:
